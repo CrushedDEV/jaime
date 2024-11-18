@@ -1,0 +1,107 @@
+# Instalación de BIND9
+sudo apt update
+sudo apt install bind9 bind9utils bind9-doc -y
+
+# Archivos principales de configuración
+/etc/bind/named.conf         # Archivo principal
+/etc/bind/named.conf.local   # Configuración de zonas personalizadas
+/etc/bind/named.conf.options # Opciones generales
+
+# Configuración de una zona directa
+# Añadir en /etc/bind/named.conf.local
+zone "example.com" {
+    type master;
+    file "/etc/bind/db.example.com";
+};
+
+# Crear el archivo de zona directa (/etc/bind/db.example.com)
+$TTL 3600
+@   IN  SOA ns1.example.com. admin.example.com. (
+        1     ; Serial
+        3600  ; Refresh
+        1800  ; Retry
+        604800; Expire
+        86400 ; Minimum TTL
+)
+    IN  NS  ns1.example.com.
+    IN  NS  ns2.example.com.
+ns1 IN  A   192.168.1.10
+ns2 IN  A   192.168.1.11
+www IN  A   192.168.1.20
+
+# Configuración de una zona inversa
+# Añadir en /etc/bind/named.conf.local
+zone "1.168.192.in-addr.arpa" {
+    type master;
+    file "/etc/bind/db.192.168.1";
+};
+
+# Crear el archivo de zona inversa (/etc/bind/db.192.168.1)
+$TTL 3600
+@   IN  SOA ns1.example.com. admin.example.com. (
+        1     ; Serial
+        3600  ; Refresh
+        1800  ; Retry
+        604800; Expire
+        86400 ; Minimum TTL
+)
+    IN  NS  ns1.example.com.
+    IN  NS  ns2.example.com.
+10  IN  PTR ns1.example.com.
+11  IN  PTR ns2.example.com.
+20  IN  PTR www.example.com.
+
+# Configuración de servidor esclavo
+# Añadir en /etc/bind/named.conf.local del esclavo
+zone "example.com" {
+    type slave;
+    file "/var/cache/bind/db.example.com";
+    masters { 192.168.1.10; };
+};
+
+zone "1.168.192.in-addr.arpa" {
+    type slave;
+    file "/var/cache/bind/db.192.168.1";
+    masters { 192.168.1.10; };
+};
+
+# Añadir un nuevo registro A
+# En el archivo de zona directa (db.example.com)
+newhost IN  A  192.168.1.30
+
+# Configurar forwarders con recursión y caché
+# Modificar /etc/bind/named.conf.options
+options {
+    directory "/var/cache/bind";
+
+    // Habilitar recursión
+    recursion yes;
+
+    // Configurar servidores forwarders
+    forwarders {
+        8.8.8.8;     # Google DNS
+        1.1.1.1;     # Cloudflare DNS
+    };
+
+    // Habilitar caché
+    dnssec-validation auto;
+
+    // Escuchar solo en direcciones locales
+    listen-on { 127.0.0.1; };
+    listen-on-v6 { ::1; };
+
+    allow-query { any; }; # Permitir consultas desde cualquier IP
+};
+
+# Comprobar la configuración
+sudo named-checkconf           # Revisa la configuración general
+sudo named-checkzone example.com /etc/bind/db.example.com  # Revisa la zona directa
+sudo named-checkzone 1.168.192.in-addr.arpa /etc/bind/db.192.168.1  # Revisa la zona inversa
+
+# Reiniciar el servicio BIND9
+sudo systemctl restart bind9
+
+# Pruebas de configuración
+dig @localhost example.com       # Consultar la zona directa
+dig @localhost -x 192.168.1.10   # Consultar la zona inversa
+dig @localhost google.com        # Probar las peticiones recursivas
