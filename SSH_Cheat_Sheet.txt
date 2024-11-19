@@ -1,0 +1,73 @@
+
+### SSH Cheat Sheet ###
+
+**1. Install SSH**
+   ```bash
+   sudo apt-get install openssh-server
+   sudo systemctl enable ssh
+   sudo systemctl start ssh
+   ```
+
+**2. Manage SSH Service**
+   ```bash
+   sudo systemctl start ssh
+   sudo systemctl stop ssh
+   sudo systemctl restart ssh
+   sudo systemctl status ssh
+   ```
+
+**3. Change Port and Block Root Access**
+   - Edit `/etc/ssh/sshd_config`:
+     ```bash
+     sudo nano /etc/ssh/sshd_config
+     ```
+     - Change port: `Port 22333`
+     - Block root: `PermitRootLogin no`
+   - Restart SSH to apply changes:
+     ```bash
+     sudo systemctl restart ssh
+     ```
+   - Reconnect using the new port:
+     ```bash
+     ssh -p 22333 user@host
+     ```
+
+**4. Security Enhancements**
+   - Edit `/etc/ssh/sshd_config`:
+     ```
+     LoginGraceTime 15
+     MaxAuthTries 3
+     DenyUsers unauthorized_user
+     ```
+   - Test configurations:
+     - Delay login > 15 seconds.
+     - Attempt login with unauthorized users.
+
+**5. SSH Certificates**
+   - Generate SSH Keys:
+     ```bash
+     ssh-keygen -t rsa -b 4096
+     ```
+   - Copy public key to server:
+     ```bash
+     scp ~/.ssh/id_rsa.pub user@host:~/.ssh/authorized_keys
+     ```
+   - Update server configuration to require certificates:
+     ```
+     PasswordAuthentication no
+     PubkeyAuthentication yes
+     ```
+   - Restart SSH and reconnect.
+
+**6. Dual Authentication (2FA)**
+   - Example: Google Authenticator.
+   - Install and configure app, link with server, and test.
+
+**7. Troubleshooting Commands**
+   ```bash
+   ssh -v user@host # Verbose output
+   sudo tail -f /var/log/auth.log # Check logs
+   ```
+
+---
+*Ensure all changes are backed up before modifying configuration files.*
