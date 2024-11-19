@@ -1,0 +1,93 @@
+
+### Apache Cheat Sheet ###
+
+**1. Install Apache**
+   ```bash
+   sudo apt-get update
+   sudo apt-get install apache2
+   ```
+
+**2. Manage Apache Service**
+   ```bash
+   sudo service apache2 start    # Start service
+   sudo service apache2 stop     # Stop service
+   sudo service apache2 restart  # Restart service
+   sudo service apache2 reload   # Reload configuration without restarting
+   sudo service apache2 status   # Check status
+   ```
+
+**3. Create and Configure a New Site**
+   - **Create Directory and Files**:
+     ```bash
+     sudo mkdir -p /var/www/web2
+     sudo touch /var/www/web2/index.html
+     ```
+   - **Copy and Edit Configuration**:
+     ```bash
+     sudo cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/web2.conf
+     sudo nano /etc/apache2/sites-available/web2.conf
+     ```
+   - **Enable and Apply Configuration**:
+     ```bash
+     sudo a2ensite web2.conf
+     sudo service apache2 reload
+     ```
+
+**4. Enable/Disable Modules and Sites**
+   ```bash
+   sudo a2enmod <module>    # Enable module
+   sudo a2dismod <module>   # Disable module
+   sudo a2ensite <site>     # Enable site
+   sudo a2dissite <site>    # Disable site
+   sudo service apache2 reload
+   ```
+
+**5. Key Directives**
+   - `DocumentRoot`: Root directory for site files.
+   - `VirtualHost`: Configure multiple sites (e.g., `<VirtualHost *:80>`).
+   - `AllowOverride`: Control `.htaccess` usage (`None` or `All`).
+   - `Options`: Access settings like `Indexes` or `FollowSymLinks`.
+   - `Alias`: Map a URL to a specific directory.
+
+**6. Authentication**
+   - **Setup Basic Authentication**:
+     ```bash
+     sudo mkdir -p /etc/apache2/claves
+     sudo htpasswd -c /etc/apache2/claves/.htpasswd admin
+     sudo htpasswd /etc/apache2/claves/.htpasswd user
+     ```
+   - **Configure Site**:
+     Add to the site config:
+     ```
+     <Directory /path/to/restricted>
+         AuthType Basic
+         AuthName "Restricted Access"
+         AuthUserFile /etc/apache2/claves/.htpasswd
+         Require valid-user
+     </Directory>
+     ```
+   - Enable and reload:
+     ```bash
+     sudo a2ensite <site>
+     sudo service apache2 reload
+     ```
+
+**7. Setup Virtual Hosts**
+   - General Host:
+     ```bash
+     sudo mkdir -p /var/www/html/general/tmp
+     sudo nano /etc/apache2/sites-available/general.conf
+     sudo a2ensite general.conf
+     sudo service apache2 reload
+     ```
+   - Restricted Host:
+     Follow similar steps as General Host but include `.htpasswd` for authentication.
+
+**8. Troubleshooting Commands**
+   ```bash
+   sudo apachectl configtest       # Test configuration
+   sudo tail -f /var/log/apache2/error.log  # View logs
+   ```
+
+---
+*Backup configurations before making changes.*
